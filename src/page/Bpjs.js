@@ -1,19 +1,42 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 import BgHome from '../image/Home.png';
 import Sehat from '../image/Sehat.png';
 
 export default function Bpjs() {
+  const location = useLocation();
+  const searchParams = location?.search || '';
+  const icdParam = new URLSearchParams(searchParams).get('icd');
+
+  const [inaCbgData, setInaCbgData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (icdParam) {
+      fetchInaCbgData(icdParam);
+    }
+  }, [icdParam]);
+
+  const fetchInaCbgData = async (icd) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://ml-api-sd7tposlba-uc.a.run.app/search_disease?jenis_pelayanan=...&sort_column=...&ascending=...`);
+      setInaCbgData(response.data);
+    } catch (error) {
+      console.error('Error fetching INA-CBG data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundImage: `url(${BgHome})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-    >
-      {/* <nav className="p-4 flex justify-between items-center bg-black bg-opacity-35">
+    <div className="min-h-screen flex flex-col" style={{ backgroundImage: `url(${BgHome})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <nav className="p-4 flex justify-between items-center bg-black bg-opacity-35">
         <div className='flex justify-center items-center gap-3 text-white'>
-        <img src={Sehat} alt="Oetomo Hospital Logo" className="h-8" />
-        <p>Oetomo Hospital</p>
+          <img src={Sehat} alt="Oetomo Hospital Logo" className="h-8" />
+          <p>Oetomo Hospital</p>
         </div>
-        
         <ul className="flex space-x-8 text-white">
           <li><a href="#" className="hover:underline">Home</a></li>
           <li><a href="#" className="hover:underline">About</a></li>
@@ -25,8 +48,7 @@ export default function Bpjs() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-14v1m0 14a9 9 0 11-8-4.473" />
           </svg>
         </button>
-      </nav> */}
-
+      </nav>
       <div className="flex-grow flex">
         <div className="lg:w-1/3 p-12 text-white">
           <h2 className="text-2xl font-bold mb-4 flex italic">Input Your BPJS Class Here</h2>
@@ -44,26 +66,33 @@ export default function Bpjs() {
               Search INA-CBG
             </button>
           </form>
-          <table className="w-full mt-8 bg-opacity-50">
-            <thead>
-              <tr>
-                <th className="border border-gray-500 p-2">INA-CBG</th>
-                <th className="border border-gray-500 p-2">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-gray-500 p-2"></td>
-                <td className="border border-gray-500 p-2"></td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="mt-8">
+            <table className="w-full bg-opacity-50">
+              <thead>
+                <tr>
+                  <th className="border border-gray-500 p-2">INA-CBG</th>
+                  <th className="border border-gray-500 p-2">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan="2" className="text-center">Loading...</td></tr>
+                ) : (
+                  inaCbgData.map((item, index) => (
+                    <tr key={index}>
+                      <td className="border border-gray-500 p-2">{item.ina_cbg}</td>
+                      <td className="border border-gray-500 p-2">{item.price}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-
-      <footer className="p-4 text-center text-white mt-28">
+      <footer className="text-center text-white mt-32">
         Follow us on @MYTEAM.COM
       </footer>
     </div>
-  )
+  );
 }
