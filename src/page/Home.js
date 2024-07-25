@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import BgHome from '../image/Home.png';
 import Sehat from '../image/Sehat.png';
 import { signOut } from 'firebase/auth';
 import { auth } from '../component/Firebase';
-import axios from 'axios';
 
 export default function Home() {
-  const [diseaseName, setDiseaseName] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
-  const [selectedICD, setSelectedICD] = useState(null);
-  const [icdDetails, setIcdDetails] = useState(null);
-  const [loadingQuery, setLoadingQuery] = useState(false);
-  const [loadingIndex, setLoadingIndex] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [query, setQuery] = useState('');
+  const [namaPasien, setNamaPasien] = useState('');
+  const [ctrlfResults, setCtrlfResults] = useState([]);
+  const [nlpResults, setNlpResults] = useState([]);
+  const [manualResults, setManualResults] = useState([]);
+  const [selectedNamaPenyakit, setSelectedNamaPenyakit] = useState(null);
+  const [selectedResult, setSelectedResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -25,42 +29,75 @@ export default function Home() {
     }
   };
 
-  const handleSearch = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoadingQuery(true);
-    setFilteredData([]);
+    setIsLoading(true);
+
     try {
-      const response = await axios.post('https://ml-api-sd7tposlba-uc.a.run.app/search_icd', { query: diseaseName });
-      const data = response.data;
-      setFilteredData(data.length > 0 ? data : []);
+      const fetchData = async (url) => {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, query, nama_pasien: namaPasien }),
+        });
+        return response.json();
+      };
+
+      const [ctrlfData, nlpData, manualData] = await Promise.all([
+        fetchData('https://ml-api-sd7tposlba-uc.a.run.app/search_icd_ctrlf'),
+        fetchData('https://ml-api-sd7tposlba-uc.a.run.app/search_icd_nlp'),
+        fetchData('https://ml-api-sd7tposlba-uc.a.run.app/search_icd_manual'),
+      ]);
+
+      setCtrlfResults(ctrlfData);
+      setNlpResults(nlpData);
+      setManualResults(manualData);
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoadingQuery(false);
+      console.error('Error:', error);
+      setIsLoading(false);
     }
   };
 
-  const handleSelectICD = async (event) => {
-    event.preventDefault();
-    setLoadingIndex(true);
-    setIcdDetails(null);
-    try {
-      const response = await axios.post('https://ml-api-sd7tposlba-uc.a.run.app/select_icd', { index: parseInt(selectedICD, 10) });
-      const data = response.data;
-      setIcdDetails(data.selected_kode_icd ? data : null);
-  
-      // Navigate to BPJS page with selected ICD data
-      const url = `/bpjs?kode_icd=${data.selected_kode_icd}&nama_penyakit=${data.selected_nama_penyakit}`;
-      window.location.href = url;
-    } catch (error) {
-      console.error('Error fetching ICD details:', error);
-    } finally {
-      setLoadingIndex(false);
+  const handleSelect = async () => {
+    if (selectedNamaPenyakit) {
+      setIsSelecting(true);
+
+      try {
+        const response = await fetch('https://ml-api-sd7tposlba-uc.a.run.app/select_icd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, nama_penyakit: selectedNamaPenyakit, nama_pasien: namaPasien, query }),
+        });
+        const data = await response.json();
+        setSelectedResult(data);
+        setIsSelecting(false);
+      } catch (error) {
+        console.error('Error:', error);
+        setIsSelecting(false);
+      }
     }
   };
+
+  const renderResults = (data, setSelected) => (
+    data.map((item, index) => (
+      <div
+        key={index}
+        className={`result-item p-2 my-2 border rounded cursor-pointer ${item.similarity !== 0 ? 'hover:bg-blue-200' : 'text-gray-400'}`}
+        onClick={() => {
+          if (item.similarity !== 0) {
+            setSelected(item.nama_penyakit);
+          }
+        }}
+      >
+        <div className="kode-icd">Kode ICD: {item.kode_icd}</div>
+        <div className="nama-penyakit">Nama Penyakit: {item.nama_penyakit}</div>
+      </div>
+    ))
+  );
 
   return (
-    <div className="bg-cover bg-center" style={{ backgroundImage: `url(${BgHome})` }}>
+    <div className="bg-center bg-cover" style={{ backgroundImage: `url(${BgHome})` }}>
       <nav className="p-4 flex justify-between items-center bg-black bg-opacity-35">
         <div className='flex justify-center items-center gap-3 text-white'>
           <img src={Sehat} alt="Oetomo Hospital Logo" className="h-8" />
@@ -68,9 +105,18 @@ export default function Home() {
         </div>
         
         <ul className="flex space-x-8 text-white">
-          <li><a href="#" className="hover:underline">Home</a></li>
+          <Link to="/"><li><a href="#" className="hover:underline">Home</a></li></Link>
           <li><a href="#" className="hover:underline">About</a></li>
-          <li><a href="#" className="hover:underline">Contact Us</a></li>
+          <li>
+            <a 
+              href="https://wa.me/6281239903121" 
+              className="hover:underline" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              Contact Us
+            </a>
+          </li>
         </ul>
         <button onClick={handleSignOut} className="text-white flex items-center space-x-2 hover:underline">
           <span>Sign Out</span>
@@ -80,76 +126,88 @@ export default function Home() {
         </button>
       </nav>
 
-      <div className="flex-grow flex">
-        <div className="lg:w-1/3 p-12 text-white">
+      <div className="flex">
+        <div className="p-12 text-white">
           <h2 className="text-2xl font-bold mb-4 flex italic">Input Your Diagnosis Here</h2>
           <p className="mb-8 flex">Let's get started!</p>
-          <form id="searchForm" className="space-y-6" onSubmit={handleSearch}>
-            <div>
-              <label htmlFor="disease-name" className="mb-2 flex">Disease Name</label>
-              <input
-                type="text"
-                id="query"
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300 bg-transparent text-white"
-                value={diseaseName}
-                onChange={(e) => setDiseaseName(e.target.value)}
-              />
-            </div>
-            <button className="w-1/2 bg-yellow-500 text-black p-3 rounded-md hover:bg-yellow-600 flex justify-center">
-              {loadingQuery ? 'Loading...' : 'Search ICD'}
-            </button>
-          </form>
-          <div id="resultsQuery" className='overflow-y-auto max-h-[calc(60vh-12rem)]'>
-            <table className="w-full mt-8 bg-opacity-50">
-              <thead>
-                <tr>
-                  <th className="border border-gray-500 p-2">ICD</th>
-                  <th className="border border-gray-500 p-2">Disease Name</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map((item, index) => (
-                  <tr key={index} onClick={() => setSelectedICD(item.kode_icd)}>
-                    <td className="border border-gray-500 p-2">{item.kode_icd}</td>
-                    <td className="border border-gray-500 p-2">{item.nama_penyakit}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className="lg:block lg:w1/2 justify-center items-center p-36">
-          <label htmlFor="icd-select" className="block mb-2 text-xl text-white">Choose ICD</label>
-          <form id="icdForm" onSubmit={handleSelectICD}>
-            <div>
-              <select
-                id="index"
-                className="p-3 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-300 bg-black text-white"
-                onChange={(e) => setSelectedICD(e.target.value)}
-                value={selectedICD || ''}
-              >
-                <option value="">Select an ICD</option>
-                {Array.isArray(filteredData) && filteredData.map((item, index) => (
-                  <option key={index} value={item.kode_icd}>{item.kode_icd}</option>
-                ))}
-              </select>
-              <button className="w-2/4 bg-white text-black p-3 rounded-md hover:bg-gray-300">
-                {loadingIndex ? 'Loading...' : 'Submit'}
-              </button>
-            </div>
-          </form>
-          <div id="resultsIndex">
-            {icdDetails && (
-              <div className="result-item">
-                <p><strong>Code:</strong> {icdDetails.selected_kode_icd}</p>
-                <p><strong>Description:</strong> {icdDetails.selected_nama_penyakit}</p>
+          <div className='grid grid-cols-2'>
+            <form onSubmit={handleSubmit} className="space-y-4 w-1/2">
+              <div>
+                <label className="text-sm font-medium flex">Dokter ID</label>
+                <input
+                  type="text"
+                  id="user_id"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  className="mt-1 p-2 w-full border rounded text-black"
+                />
               </div>
-            )}
+              <div>
+                <label className="flex text-sm font-medium">Disease Name</label>
+                <input
+                  type="text"
+                  id="query"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="mt-1 p-2 w-full border rounded text-black"
+                />
+              </div>
+              <div>
+                <label className="flex text-sm font-medium">Nama Pasien</label>
+                <input
+                  type="text"
+                  id="nama_pasien"
+                  value={namaPasien}
+                  onChange={(e) => setNamaPasien(e.target.value)}
+                  className="mt-1 p-2 w-full border rounded text-black"
+                />
+              </div>
+              <button type="submit" className="w-full py-2 px-4 bg-yellow-500 text-white font-bold rounded hover:bg-blue-700">
+                Search
+              </button>
+              {isLoading && <div className="mt-4 text-center">Loading...</div>}
+            </form>
+            <div className="mt-4 flex gap-4">
+            <div className="w-1/3 h-60 overflow-y-scroll">
+              <h2 className="text-xl font-bold">Choose ICD (CTRL+F)</h2>
+              <div id="ctrlf-results" className="space-y-2">
+                {renderResults(ctrlfResults, setSelectedNamaPenyakit)}
+              </div>
+            </div>
+            <div className="w-1/3 h-60 overflow-y-scroll">
+              <h2 className="text-xl font-bold">Choose ICD (NLP)</h2>
+              <div id="nlp-results" className="space-y-2">
+                {renderResults(nlpResults, setSelectedNamaPenyakit)}
+              </div>
+            </div>
+            <div className="w-1/3 h-60 overflow-y-scroll">
+              <h2 className="text-xl font-bold">Choose ICD (Manual)</h2>
+              <div id="manual-results" className="space-y-2">
+                {renderResults(manualResults, setSelectedNamaPenyakit)}
+              </div>
+            </div>
           </div>
+          </div>
+          
+          {selectedNamaPenyakit && (
+            <button
+              id="select-btn"
+              onClick={handleSelect}
+              className="w-full py-2 px-4 mt-4 bg-green-600 text-white font-bold rounded hover:bg-green-700"
+            >
+              Submit
+            </button>
+          )}
+          {isSelecting && <div className="mt-4 text-center">Selecting...</div>}
+          {selectedResult && (
+            <div id="selected-result" className="mt-4 bg-green-100 p-4 rounded shadow-md text-black">
+              <div>Kode ICD: {selectedResult.selected_kode_icd}</div>
+              <div>Nama Penyakit: {selectedResult.selected_nama_penyakit}</div>
+            </div>
+          )}
         </div>
       </div>
-
-      <footer className="text-center text-white mt-24">
+      <footer className="text-center text-white mt-20">
         Follow us on @MYTEAM.COM
       </footer>
     </div>

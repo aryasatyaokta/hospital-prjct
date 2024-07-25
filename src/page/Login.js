@@ -34,7 +34,13 @@ export default function Login() {
       toast.success("User Logged In Successfully!!", {
         position: "top-center"
       });
-      navigate('/');
+
+      // Redirect based on username
+      if (username === "admin") {
+        navigate('/bpjs');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.log(error.message);
       toast.error(error.message, {
