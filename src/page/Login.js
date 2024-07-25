@@ -18,7 +18,6 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Query Firestore to find the email associated with the username
       const q = query(collection(db, "Users"), where("username", "==", username));
       const querySnapshot = await getDocs(q);
 
@@ -35,7 +34,6 @@ export default function Login() {
         position: "top-center"
       });
 
-      // Redirect based on username
       if (username === "admin") {
         navigate('/bpjs');
       } else {

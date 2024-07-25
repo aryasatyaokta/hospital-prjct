@@ -12,10 +12,9 @@ import Register from './page/Register';
 import Bpjs from './page/Bpjs';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { auth } from './component/Firebase'; // Adjust the path as needed
+import { auth } from './component/Firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
-// Higher-Order Component for private routes
 const PrivateRoute = ({ element: Element }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
 
@@ -27,7 +26,6 @@ const PrivateRoute = ({ element: Element }) => {
   }, []);
 
   if (isAuthenticated === null) {
-    // Optionally add a loading state here
     return <div>Loading...</div>;
   }
 
