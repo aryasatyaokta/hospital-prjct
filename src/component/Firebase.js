@@ -7,12 +7,12 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAz4-ISK6lxeGTEZZGjRP-8WMjgl5_OLB8",
-  authDomain: "oetomo-hos.firebaseapp.com",
-  projectId: "oetomo-hos",
-  storageBucket: "oetomo-hos.appspot.com",
-  messagingSenderId: "482398847573",
-  appId: "1:482398847573:web:89b1183c16b36caf2dcadc"
+  apiKey: "AIzaSyAGPd9enDZE8cztitHO-08AAPZsNWhYnYk",
+  authDomain: "oetomo-hospital.firebaseapp.com",
+  projectId: "oetomo-hospital",
+  storageBucket: "oetomo-hospital.appspot.com",
+  messagingSenderId: "551772090196",
+  appId: "1:551772090196:web:aeca1a2af2164c00cb62c1"
 };
 
 // Initialize Firebase
