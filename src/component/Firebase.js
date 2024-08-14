@@ -7,12 +7,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAGPd9enDZE8cztitHO-08AAPZsNWhYnYk",
-  authDomain: "oetomo-hospital.firebaseapp.com",
-  projectId: "oetomo-hospital",
-  storageBucket: "oetomo-hospital.appspot.com",
-  messagingSenderId: "551772090196",
-  appId: "1:551772090196:web:aeca1a2af2164c00cb62c1"
+  apiKey: "AIzaSyDZ6P5umwNvYtmPkcKU0tRDofhif4XXEC0",
+  authDomain: "hermina-project-9b686.firebaseapp.com",
+  projectId: "hermina-project-9b686",
+  storageBucket: "hermina-project-9b686.appspot.com",
+  messagingSenderId: "722369498383",
+  appId: "1:722369498383:web:90334a272e469abae2c27a",
+  measurementId: "G-1BVYK83NXH"
 };
 
 // Initialize Firebase
